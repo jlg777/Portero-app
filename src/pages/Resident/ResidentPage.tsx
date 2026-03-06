@@ -17,7 +17,8 @@ export const ResidentPage = () => {
 
   await updateCallStatus(incomingCall.id, "accepted")
 
-  navigate(`/chat/${incomingCall.id}`)
+  // resident is joining the chat
+  navigate(`/chat/${incomingCall.id}?role=resident`)
 }
 
   const handleReject = async () => {

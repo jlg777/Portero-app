@@ -6,7 +6,7 @@ export const listenCalls = (departmentId: number, callback: (call: any) => void)
   const q = query(
     collection(db, "calls"),
     where("departmentId", "==", departmentId),
-    where("status", "==", "pending")
+    where("status", "==", "waiting")
   )
 
   return onSnapshot(q, (snapshot) => {

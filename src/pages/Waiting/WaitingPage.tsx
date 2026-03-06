@@ -1,46 +1,50 @@
-import { useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { doc, onSnapshot } from "firebase/firestore"
-import { db } from "../../services/firebase/firebase"
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { listenCall } from "../../services/calls/listenCall";
 
 export const WaitingPage = () => {
+  const navigate = useNavigate();
 
-  const { id } = useParams()
-  const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>();
+  if (!id) return <p>Error de llamada</p>;
+
+  const callId = id;
+
+  const [call, setCall] = useState<any>(null);
 
   useEffect(() => {
+    const unsubscribe = listenCall(callId, setCall);
 
-    if (!id) return
+    return () => unsubscribe();
+  }, [callId]);
 
-    const ref = doc(db, "calls", id)
-
-    const unsubscribe = onSnapshot(ref, (snapshot) => {
-
-      const data = snapshot.data()
-
-      if (!data) return
-
-      if (data.status === "accepted") {
-        navigate(`/chat/${id}`)
-      }
-
-      if (data.status === "rejected") {
-        alert("La llamada fue rechazada")
-        navigate("/portero")
-      }
-
-    })
-
-    return () => unsubscribe()
-
-  }, [])
+  // redirect when status changes
+  useEffect(() => {
+    if (call?.status === "accepted") {
+      // include role so ChatPage knows who is sending messages
+      navigate(`/chat/${callId}?role=portero`);
+    } else if (call?.status === "rejected") {
+      // optionally go back or show another page
+      navigate(`/portero`);
+    }
+  }, [call, callId, navigate]);
 
   return (
     <div>
 
-      <h1>📞 Llamando...</h1>
+      <h1>Esperando respuesta...</h1>
 
-      <p>Esperando que el residente atienda</p>
+      {call?.status === "waiting" && (
+        <p>Llamando al departamento...</p>
+      )}
+
+      {call?.status === "accepted" && (
+        <p>Conectado</p>
+      )}
+
+      {call?.status === "rejected" && (
+        <p>No atendieron</p>
+      )}
 
     </div>
   )
