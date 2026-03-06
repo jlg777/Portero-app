@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { listenMessages } from "../../services/chat/listenMessages";
 import { sendMessage } from "../../services/chat/sendMessage";
 import { finalizeCall } from "../../services/calls/finalizeCall";
+import { listenCall } from "../../services/calls/listenCall";
 
 export const ChatPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +17,6 @@ export const ChatPage = () => {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
-  const [reason, setReason] = useState("");
   const [ended, setEnded] = useState(false);
 
   useEffect(() => {
@@ -26,6 +26,18 @@ export const ChatPage = () => {
 
     return () => unsubscribe();
   }, [callId]);
+
+  // observe call status so both sides are kicked out when someone finalizes
+  useEffect(() => {
+    if (!callId) return;
+    const unsubscribe = listenCall(callId, (data: any) => {
+      if (data.status === "finished") {
+        setEnded(true);
+        navigate(role === "portero" ? "/portero" : "/resident");
+      }
+    });
+    return () => unsubscribe();
+  }, [callId, role, navigate]);
 
   const handleSend = async () => {
     if (!text || !role) return;
@@ -54,27 +66,17 @@ export const ChatPage = () => {
       <hr />
 
       {ended ? (
-        <p>La llamada ha finalizado{reason && `: ${reason}`}</p>
+        <p>La llamada ha finalizado.</p>
       ) : (
-        <div>
-          <h3>Finalizar llamada</h3>
-          <input
-            placeholder="Motivo de la finalización"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-          <button
-            onClick={async () => {
-              if (!reason) return;
-              await finalizeCall(callId, reason);
-              setEnded(true);
-              // navegar de regreso al portero o residente según el rol
-              navigate(role === "portero" ? "/portero" : "/resident");
-            }}
-          >
-            Finalizar
-          </button>
-        </div>
+        <button
+          onClick={async () => {
+            await finalizeCall(callId);
+            setEnded(true);
+            navigate(role === "portero" ? "/portero" : "/resident");
+          }}
+        >
+          Finalizar llamada
+        </button>
       )}
     </div>
   );
