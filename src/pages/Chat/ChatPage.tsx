@@ -1,83 +1,119 @@
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { listenMessages } from "../../services/chat/listenMessages";
-import { sendMessage } from "../../services/chat/sendMessage";
-import { finalizeCall } from "../../services/calls/finalizeCall";
-import { listenCall } from "../../services/calls/listenCall";
+import { useEffect, useRef, useState } from "react"
+import { useParams, useSearchParams } from "react-router-dom"
+import { listenMessages } from "../../services/chat/listenMessages"
+import { sendMessage } from "../../services/chat/sendMessage"
+import '../../index.css'
 
 export const ChatPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const role = searchParams.get("role");
 
-  if (!id || !role) return <p>Error: falta información de rol o id</p>;
+  const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
 
-  const callId = id;
+  const callId = id!
+  const role = searchParams.get("role") || "resident"
 
-  const [messages, setMessages] = useState<any[]>([]);
-  const [text, setText] = useState("");
-  const [ended, setEnded] = useState(false);
+  const [messages, setMessages] = useState<any[]>([])
+  const [text, setText] = useState("")
+
+  const bottomRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (!callId) return;
 
-    const unsubscribe = listenMessages(callId, setMessages);
+    const unsubscribe = listenMessages(callId, setMessages)
 
-    return () => unsubscribe();
-  }, [callId]);
+    return () => unsubscribe()
 
-  // observe call status so both sides are kicked out when someone finalizes
+  }, [callId])
+
+
+  // scroll automático
   useEffect(() => {
-    if (!callId) return;
-    const unsubscribe = listenCall(callId, (data: any) => {
-      if (data.status === "finished") {
-        setEnded(true);
-        navigate(role === "portero" ? "/portero" : "/resident");
-      }
-    });
-    return () => unsubscribe();
-  }, [callId, role, navigate]);
+
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+
+  }, [messages])
+
 
   const handleSend = async () => {
-    if (!text || !role) return;
 
-    await sendMessage(callId, role, text);
+    if (!text.trim()) return
 
-    setText("");
-  };
+    await sendMessage(callId, role, text)
+
+    setText("")
+
+  }
+
 
   return (
-    <div>
-      <h1>Chat</h1>
+    <div className="chat-container">
 
-      <div>
-        {messages.map((msg) => (
-          <p key={msg.id}>
-            <b>{msg.sender}:</b> {msg.text}
-          </p>
-        ))}
+      <div className="chat-header">
+        <h1>Chat Portero</h1>
+        <p>Comunicación con el edificio</p>
       </div>
 
-      <input value={text} onChange={(e) => setText(e.target.value)} />
 
-      <button onClick={handleSend} disabled={ended}>Enviar</button>
+      <div className="messages-container">
 
-      <hr />
+        {messages.map((msg) => {
 
-      {ended ? (
-        <p>La llamada ha finalizado.</p>
-      ) : (
-        <button
-          onClick={async () => {
-            await finalizeCall(callId);
-            setEnded(true);
-            navigate(role === "portero" ? "/portero" : "/resident");
+          const isMe = msg.sender === role
+
+          return (
+
+            <div
+              key={msg.id}
+              className={`message ${isMe ? "resident" : "portero"}`}
+            >
+
+              {!isMe && (
+                <div className="message-icon">
+                  {msg.sender === "portero" ? "👮" : "👤"}
+                </div>
+              )}
+
+              <div className="message-content">
+                {msg.text}
+              </div>
+
+              {isMe && (
+                <div className="message-icon">
+                  {role === "portero" ? "👮" : "👤"}
+                </div>
+              )}
+
+            </div>
+
+          )
+        })}
+
+        <div ref={bottomRef}></div>
+
+      </div>
+
+
+      <div className="chat-form">
+
+        <input
+          className="chat-input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Escribe un mensaje..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSend()
           }}
+        />
+
+        <button
+          className="send-button"
+          onClick={handleSend}
         >
-          Finalizar llamada
+          ➤
         </button>
-      )}
+
+      </div>
+
     </div>
-  );
-};
+  )
+}
