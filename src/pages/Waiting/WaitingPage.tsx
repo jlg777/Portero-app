@@ -1,51 +1,80 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { listenCall } from "../../services/calls/listenCall";
+import "../../index.css";
+import { finalizeCall } from "../../services/calls/finalizeCall";
 
 export const WaitingPage = () => {
   const navigate = useNavigate();
-
   const { id } = useParams<{ id: string }>();
+
   if (!id) return <p>Error de llamada</p>;
 
   const callId = id;
-
   const [call, setCall] = useState<any>(null);
 
   useEffect(() => {
     const unsubscribe = listenCall(callId, setCall);
-
     return () => unsubscribe();
   }, [callId]);
 
-  // redirect when status changes
   useEffect(() => {
     if (call?.status === "accepted") {
-      // include role so ChatPage knows who is sending messages
       navigate(`/chat/${callId}?role=portero`);
-    } else if (call?.status === "rejected") {
-      // optionally go back or show another page
-      navigate(`/portero`);
+    }
+
+    if (call?.status === "rejected") {
+      setTimeout(() => {
+        navigate("/portero");
+      }, 5000);
     }
   }, [call, callId, navigate]);
 
+  const handleEndCall = async () => {
+    await finalizeCall(callId);
+
+    navigate("/portero");
+  };
+
   return (
-    <div>
+    <div className="chat-container">
+      <div className="chat-header">
+        <h1>Portero Virtual</h1>
+        <p>Conectando con el departamento</p>
+      </div>
 
-      <h1>Esperando respuesta...</h1>
+      <div className="messages-container waiting-container">
+        {call?.status === "accepted" && (
+          <div className="waiting-message success">
+            <h2>✅ Conectando...</h2>
+          </div>
+        )}
 
-      {call?.status === "waiting" && (
-        <p>Llamando al departamento...</p>
-      )}
+        {call?.status === "waiting" && (
+          <div className="waiting-message">
+            <h2>📞 Llamando al departamento...</h2>
 
-      {call?.status === "accepted" && (
-        <p>Conectado</p>
-      )}
+            <div className="typing">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
 
-      {call?.status === "rejected" && (
-        <p>No atendieron</p>
-      )}
+            <p>Esperando que el residente atienda</p>
 
+            <button className="end-call-button cancel-call-button" onClick={handleEndCall}>
+              Cancelar llamada
+            </button>
+          </div>
+        )}
+
+        {call?.status === "rejected" && (
+          <div className="waiting-message error">
+            <h2>❌ No atendieron</h2>
+            <p>Volviendo al panel...</p>
+          </div>
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};

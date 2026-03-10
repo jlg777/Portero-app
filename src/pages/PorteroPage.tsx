@@ -31,17 +31,7 @@ export const PorteroPage = () => {
       <button onClick={()=>handleCall(5)}>Depto 5</button>
       <button onClick={()=>handleCall(6)}>Depto 6</button>
 
-      {call?.status === "waiting" && (
-        <p>Llamando al departamento...</p>
-      )}
 
-      {call?.status === "accepted" && (
-        <p>Conectado</p>
-      )}
-
-      {call?.status === "rejected" && (
-        <p>No atendieron</p>
-      )}
 
     </div>
   )
