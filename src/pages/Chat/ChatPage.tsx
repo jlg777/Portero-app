@@ -67,14 +67,7 @@ export const ChatPage = () => {
   };
 
   const handleEndCall = async () => {
-    await finalizeCall(callId);
-
-    if (role === "portero") {
-      navigate("/portero");
-    } else {
-      navigate("/resident");
-    }
-  };
+await finalizeCall(callId, "finished");  };
 
   return (
     <div className="chat-container">

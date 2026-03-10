@@ -12,6 +12,8 @@ export const listenCalls = (
     where("status", "==", "waiting")
   )
 
+
+  
   return onSnapshot(q, (snapshot) => {
 
     if (snapshot.empty) {

@@ -31,8 +31,7 @@ export const WaitingPage = () => {
   }, [call, callId, navigate]);
 
   const handleEndCall = async () => {
-    await finalizeCall(callId);
-
+await finalizeCall(callId, "cancelled", "portero_cancelled");
     navigate("/portero");
   };
 

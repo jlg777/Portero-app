@@ -2,24 +2,22 @@ import { useEffect, useState } from "react";
 import { listenCalls } from "../../services/calls/listenCalls";
 import { updateCallStatus } from "../../services/calls/updateCallStatus";
 import { useNavigate } from "react-router-dom";
+import "../../index.css";
 
 export const ResidentPage = () => {
-
-    const navigate = useNavigate()
-
-  const departmentId = 3; // simulamos que el residente es del depto 3
+  const navigate = useNavigate();
+  const departmentId = 3;
 
   const [incomingCall, setIncomingCall] = useState<any>(null);
+  const [callEndedMessage, setCallEndedMessage] = useState("");
 
- const handleAccept = async () => {
+  const handleAccept = async () => {
+    if (!incomingCall?.id) return;
 
-  if (!incomingCall?.id) return
+    await updateCallStatus(incomingCall.id, "accepted");
 
-  await updateCallStatus(incomingCall.id, "accepted")
-
-  // resident is joining the chat
-  navigate(`/chat/${incomingCall.id}?role=resident`)
-}
+    navigate(`/chat/${incomingCall.id}?role=resident`);
+  };
 
   const handleReject = async () => {
     if (!incomingCall) return;
@@ -29,30 +27,90 @@ export const ResidentPage = () => {
     setIncomingCall(null);
   };
 
-  useEffect(() => {
-    const unsubscribe = listenCalls(departmentId, (call) => {
-      setIncomingCall(call);
-    });
+ useEffect(() => {
+  const unsubscribe = listenCalls(departmentId, (call) => {
 
-    return () => unsubscribe();
-  }, []);
+    if (!call) {
+      setIncomingCall(null);
+      return;
+    }
+
+    if (call.status === "cancelled") {
+      setCallEndedMessage("❌ El portero canceló la llamada");
+      setIncomingCall(null);
+
+      setTimeout(() => {
+        setCallEndedMessage("");
+      }, 3000);
+
+      return;
+    }
+
+    if (call.status === "finished") {
+      setCallEndedMessage("📴 La llamada finalizó");
+      setIncomingCall(null);
+
+      setTimeout(() => {
+        setCallEndedMessage("");
+      }, 3000);
+
+      return;
+    }
+
+    if (call.status === "rejected") {
+      setCallEndedMessage("❌ Llamada rechazada");
+      setIncomingCall(null);
+
+      setTimeout(() => {
+        setCallEndedMessage("");
+      }, 3000);
+
+      return;
+    }
+
+    setIncomingCall(call);
+
+  });
+
+  return () => unsubscribe();
+}, []);
 
   return (
-    <div>
-      <h1>Panel Residente</h1>
+    <div className="chat-container">
+      <div className="chat-header">
+        <h1>Panel Residente</h1>
+        <p>Comunicación con portería</p>
+      </div>
 
-      {incomingCall ? (
-        <div>
-          <h2>📞 Llamada entrante</h2>
-          <p>Departamento: {incomingCall.departmentId}</p>
+      <div className="messages-container">
+        {incomingCall ? (
+          <div className="incoming-call">
+            <h2>📞 Llamada entrante...</h2>
+            <p>Portería está llamando</p>
+            <div className="typing">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div className="call-actions">
+              <button className="accept-call-button" onClick={handleAccept}>
+                Atender
+              </button>
 
-          <button onClick={handleAccept}>Atender</button>
-
-          <button onClick={handleReject}>Rechazar</button>
-        </div>
-      ) : (
-        <p>No hay llamadas</p>
-      )}
+              <button className="reject-call-button" onClick={handleReject}>
+                Rechazar
+              </button>
+            </div>
+          </div>
+        ) : callEndedMessage ? (
+          <p className="call-cancelled">{callEndedMessage}</p>
+        ) : (
+          <div className="welcome-message">
+            <h2>Sin llamadas</h2>
+            <p>Cuando portería te llame aparecerá aquí</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
