@@ -517,3 +517,18 @@ button:focus-visible {
   margin: 5px 10px;
   font-style: italic;
 }
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message {
+  animation: messageAppear .9s ease-out;
+}

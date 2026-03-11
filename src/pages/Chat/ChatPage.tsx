@@ -6,6 +6,7 @@ import "../../index.css";
 import { finalizeCall } from "../../services/calls/finalizeCall";
 import { listenCall } from "../../services/calls/listenCall";
 import { setTyping } from "../../services/calls/setTyping";
+import { MessageBubble } from "../../componets/MessageBubble";
 
 export const ChatPage = () => {
   const [callStatus, setCallStatus] = useState("active");
@@ -14,8 +15,11 @@ export const ChatPage = () => {
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [callEndedReason, setCallEndedReason] = useState<string | null>(null);
+  const [endingCall, setEndingCall] = useState(false);
 
   const navigate = useNavigate();
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const callId = id!;
   type Role = "portero" | "resident";
@@ -25,20 +29,25 @@ export const ChatPage = () => {
   const [text, setText] = useState("");
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
-
+  const finishedRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const unsubscribe = listenMessages(callId, setMessages);
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [callId]);
-
-  const finishedRef = useRef(false);
 
   useEffect(() => {
     const unsubscribe = listenCall(callId, (call) => {
       if (!call) return;
 
       setCallStatus(call.status);
+
+      if (call.status === "active") {
+        resetTimeout(); // 👈 AQUÍ VA
+      }
 
       if (role === "resident" && call.porteroTyping) {
         setTypingUser("portero");
@@ -64,27 +73,65 @@ export const ChatPage = () => {
     return () => unsubscribe();
   }, [callId, navigate, role]);
 
-  // scroll automático
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    inputRef.current?.focus();
+  }, []);
 
   const handleSend = async () => {
     if (!text.trim() || sending) return;
 
-    setSending(true);
+    try {
+      setSending(true);
 
-    await sendMessage(callId, role, text);
-    await setTyping(callId, role, false);
+      await sendMessage(callId, role, text);
 
-    setText("");
+      await setTyping(callId, role, false);
+      resetTimeout();
+      setText("");
+      inputRef.current?.focus();
+    } catch (error) {
+      console.error("Error enviando mensaje:", error);
 
-    setSending(false);
+      alert("No se pudo enviar el mensaje. Intenta nuevamente.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleEndCall = async () => {
-    await finalizeCall(callId, role);
+    if (endingCall) return;
+
+    try {
+      setEndingCall(true);
+      await finalizeCall(callId, role);
+    } catch (error) {
+      console.error("Error finalizando llamada:", error);
+      alert("No se pudo finalizar la llamada.");
+      setEndingCall(false);
+    }
   };
+
+  const resetTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        await finalizeCall(callId, "system");;
+      } catch (err) {
+        console.error("Error finalizando por timeout", err);
+      }
+    }, 3000); // 60 segundos
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="chat-container">
@@ -97,30 +144,10 @@ export const ChatPage = () => {
       </div>
 
       <div className="messages-container">
-        {messages.map((msg) => {
-          const isMe = msg.sender === role;
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} msg={msg} role={role} />
+        ))}
 
-          return (
-            <div
-              key={msg.id}
-              className={`message ${isMe ? "resident" : "portero"}`}
-            >
-              {!isMe && (
-                <div className="message-icon">
-                  {msg.sender === "portero" ? "👮" : "👤"}
-                </div>
-              )}
-
-              <div className="message-content">{msg.text}</div>
-
-              {isMe && (
-                <div className="message-icon">
-                  {role === "portero" ? "👮" : "👤"}
-                </div>
-              )}
-            </div>
-          );
-        })}
         {typingUser && (
           <div className="typing-indicator">
             {typingUser === "portero"
@@ -135,22 +162,25 @@ export const ChatPage = () => {
             {callEndedReason === "resident" &&
               "📴 El residente finalizó la llamada"}
             {!callEndedReason && "📴 La llamada finalizó"}
+            {callEndedReason === "timeout" &&
+              "⏱️ La llamada expiró por inactividad"}
 
             <div className="returning">Volviendo al panel...</div>
           </div>
         )}
-        
+
         <div ref={bottomRef}></div>
       </div>
 
       <div className="chat-form">
         <input
+          ref={inputRef}
           className="chat-input"
           value={text}
           onChange={(e) => {
             setText(e.target.value);
-
             setTyping(callId, role, true);
+            resetTimeout();
           }}
           onBlur={() => {
             setTyping(callId, role, false);
@@ -165,11 +195,15 @@ export const ChatPage = () => {
         <button
           className="send-button"
           onClick={handleSend}
-          disabled={callStatus === "finished"}
+          disabled={callStatus === "finished" || sending}
         >
           ➤
         </button>
-        <button className="end-call-button" onClick={handleEndCall}>
+        <button
+          className="end-call-button"
+          onClick={handleEndCall}
+          disabled={endingCall}
+        >
           {" "}
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -1,7 +1,7 @@
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
-type CallEndReason = "portero" | "resident" | "canceled";
+type CallEndReason = "portero" | "resident" | "canceled" | "system";
 
 export const finalizeCall = async (
   callId: string,
