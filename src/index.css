@@ -442,7 +442,7 @@ button:focus-visible {
   padding: 14px 26px;
   border-radius: 30px;
   border: none;
-  background: linear-gradient(135deg,#4caf50,#2e7d32);
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
   color: white;
   font-size: 1rem;
   cursor: pointer;
@@ -451,14 +451,14 @@ button:focus-visible {
 
 .accept-call-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(76,175,80,0.5);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
 }
 
 .reject-call-button {
   padding: 14px 26px;
   border-radius: 30px;
   border: none;
-  background: linear-gradient(135deg,#ff4b4b,#b30000);
+  background: linear-gradient(135deg, #ff4b4b, #b30000);
   color: white;
   font-size: 1rem;
   cursor: pointer;
@@ -467,7 +467,7 @@ button:focus-visible {
 
 .reject-call-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(255,0,0,0.4);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
 }
 
 .portero-container {
@@ -491,7 +491,7 @@ button:focus-visible {
   border: none;
   cursor: pointer;
 
-  background: linear-gradient(135deg,#667eea,#764ba2);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
 
   transition: all 0.25s ease;
@@ -499,7 +499,7 @@ button:focus-visible {
 
 .department-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(102,126,234,0.4);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
 }
 
 .department-button:active {
@@ -509,4 +509,11 @@ button:focus-visible {
 .department-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.typing-indicator {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 5px 10px;
+  font-style: italic;
 }

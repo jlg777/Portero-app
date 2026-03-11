@@ -5,17 +5,22 @@ import { sendMessage } from "../../services/chat/sendMessage";
 import "../../index.css";
 import { finalizeCall } from "../../services/calls/finalizeCall";
 import { listenCall } from "../../services/calls/listenCall";
+import { setTyping } from "../../services/calls/setTyping";
 
 export const ChatPage = () => {
   const [callStatus, setCallStatus] = useState("active");
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [callEndedReason, setCallEndedReason] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
   const callId = id!;
-  const role = searchParams.get("role") || "resident";
+  type Role = "portero" | "resident";
 
+  const role = (searchParams.get("role") || "resident") as Role;
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
 
@@ -27,31 +32,37 @@ export const ChatPage = () => {
     return () => unsubscribe();
   }, [callId]);
 
+  const finishedRef = useRef(false);
+
   useEffect(() => {
     const unsubscribe = listenCall(callId, (call) => {
       if (!call) return;
 
       setCallStatus(call.status);
 
+      if (role === "resident" && call.porteroTyping) {
+        setTypingUser("portero");
+      } else if (role === "portero" && call.residentTyping) {
+        setTypingUser("resident");
+      } else {
+        setTypingUser(null);
+      }
+
       if (call.status === "finished") {
+        setCallEndedReason(call.reason);
+      }
+
+      if (call.status === "finished" && !finishedRef.current) {
+        finishedRef.current = true;
+
         setTimeout(() => {
           navigate(role === "portero" ? "/portero" : "/resident");
-        }, 5000); 
+        }, 5000);
       }
     });
 
     return () => unsubscribe();
-  }, [callId]);
-
-  /*useEffect(() => {
-    if (callStatus === "finished") {
-      console.log("CALL FINALIZADA");
-
-      setTimeout(() => {
-        navigate(role === "portero" ? "/portero" : "/resident");
-      }, 3000);
-    }
-  }, [callStatus, role, navigate]);*/
+  }, [callId, navigate, role]);
 
   // scroll automático
   useEffect(() => {
@@ -59,15 +70,21 @@ export const ChatPage = () => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || sending) return;
+
+    setSending(true);
 
     await sendMessage(callId, role, text);
+    await setTyping(callId, role, false);
 
     setText("");
+
+    setSending(false);
   };
 
   const handleEndCall = async () => {
-await finalizeCall(callId, "finished");  };
+    await finalizeCall(callId, role);
+  };
 
   return (
     <div className="chat-container">
@@ -104,7 +121,25 @@ await finalizeCall(callId, "finished");  };
             </div>
           );
         })}
+        {typingUser && (
+          <div className="typing-indicator">
+            {typingUser === "portero"
+              ? "👮 Portero está escribiendo..."
+              : "👤 Residente está escribiendo..."}
+          </div>
+        )}
+        {callStatus === "finished" && (
+          <div className="call-ended">
+            {callEndedReason === "portero" &&
+              "📴 El portero finalizó la llamada"}
+            {callEndedReason === "resident" &&
+              "📴 El residente finalizó la llamada"}
+            {!callEndedReason && "📴 La llamada finalizó"}
 
+            <div className="returning">Volviendo al panel...</div>
+          </div>
+        )}
+        
         <div ref={bottomRef}></div>
       </div>
 
@@ -112,7 +147,14 @@ await finalizeCall(callId, "finished");  };
         <input
           className="chat-input"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+
+            setTyping(callId, role, true);
+          }}
+          onBlur={() => {
+            setTyping(callId, role, false);
+          }}
           placeholder="Escribe un mensaje..."
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSend();

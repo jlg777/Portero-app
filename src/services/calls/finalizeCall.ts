@@ -1,15 +1,17 @@
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
+type CallEndReason = "portero" | "resident" | "canceled";
+
 export const finalizeCall = async (
   callId: string,
-  status: "finished" | "cancelled",
-  reason?: string
+  reason?: CallEndReason
 ) => {
+
   const ref = doc(db, "calls", callId);
 
   const updateData: any = {
-    status,
+    status: "finished",
     finishedAt: new Date()
   };
 
@@ -18,4 +20,5 @@ export const finalizeCall = async (
   }
 
   await updateDoc(ref, updateData);
+
 };
