@@ -37,7 +37,7 @@ export const WaitingPage = () => {
   }, [call, callId, navigate]);
 
   const handleEndCall = async () => {
-    await finalizeCall(callId, "canceled");
+    await finalizeCall(callId, "portero");
     navigate("/portero");
   };
 
@@ -80,6 +80,11 @@ export const WaitingPage = () => {
           <div className="waiting-message error">
             <h2>⏱ El residente no respondió</h2>
             <p>La llamada se canceló automáticamente</p>
+          </div>
+        )}
+        {call?.status === "finished" && call?.reason === "resident" && (
+          <div className="waiting-message error">
+            <h2>❌ El residente canceló la llamada</h2>
           </div>
         )}
       </div>
