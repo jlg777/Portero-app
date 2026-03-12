@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { listenCalls } from "../../services/calls/listenCalls";
 import { updateCallStatus } from "../../services/calls/updateCallStatus";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "../../index.css";
 import { finalizeCall } from "../../services/calls/finalizeCall";
+import { registerDevice } from "../../services/device/registerDevice";
 
 export const ResidentPage = () => {
   const navigate = useNavigate();
-  const departmentId = 3;
+  const { departmentIdNumber } = useParams();
+  const departmentId = Number(departmentIdNumber);
 
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [callEndedMessage, setCallEndedMessage] = useState("");
@@ -37,42 +39,52 @@ export const ResidentPage = () => {
     setIncomingCall(null);
   };
 
- useEffect(() => {
-  const unsubscribe = listenCalls(departmentId, (call) => {
+  useEffect(() => {
+    if (!departmentId) return;
 
-    if (!call) {
-      setIncomingCall(null);
-      return;
+    let deviceId = localStorage.getItem("deviceId");
+
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+
+      localStorage.setItem("deviceId", deviceId);
+
+      registerDevice(deviceId, departmentId);
     }
-console.log(call)
-    if (call.status === "waiting") {
-      setIncomingCall(call);
-      return;
-    }
+  }, [departmentId]);
 
-    if (call.status === "finished") {
-
-      if (call.reason === "portero") {
-        setCallEndedMessage("❌ El portero canceló la llamada");
+  useEffect(() => {
+    const unsubscribe = listenCalls(departmentId, (call) => {
+      if (!call) {
+        setIncomingCall(null);
+        return;
+      }
+      if (call.status === "waiting") {
+        setIncomingCall(call);
+        return;
       }
 
-      if (call.reason === "resident") {
-        setCallEndedMessage("❌ Cancelaste la llamada");
+      if (call.status === "finished") {
+        if (call.reason === "portero") {
+          setCallEndedMessage("❌ El portero canceló la llamada");
+        }
+
+        if (call.reason === "resident") {
+          setCallEndedMessage("❌ Cancelaste la llamada");
+        }
+
+        if (call.reason === "canceled") {
+          setCallEndedMessage("📞 Llamada perdida");
+        }
+
+        setIncomingCall(null);
+
+        setTimeout(() => setCallEndedMessage(""), 3000);
       }
+    });
 
-      if (call.reason === "canceled") {
-        setCallEndedMessage("📞 Llamada perdida");
-      }
-
-      setIncomingCall(null);
-
-      setTimeout(() => setCallEndedMessage(""), 3000);
-    }
-
-  });
-
-  return () => unsubscribe();
-}, []);;
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!incomingCall) return;
