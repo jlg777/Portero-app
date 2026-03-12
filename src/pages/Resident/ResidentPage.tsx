@@ -11,6 +11,7 @@ export const ResidentPage = () => {
 
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [callEndedMessage, setCallEndedMessage] = useState("");
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAccept = async () => {
@@ -28,56 +29,50 @@ export const ResidentPage = () => {
   const handleReject = async () => {
     if (!incomingCall) return;
 
-    await updateCallStatus(incomingCall.id, "rejected");
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
+    await finalizeCall(incomingCall.id, "resident");
     setIncomingCall(null);
   };
 
-  useEffect(() => {
-    const unsubscribe = listenCalls(departmentId, (call) => {
-      if (!call) {
-        setIncomingCall(null);
-        return;
-      }
+ useEffect(() => {
+  const unsubscribe = listenCalls(departmentId, (call) => {
 
-      if (call.status === "cancelled") {
-        setCallEndedMessage("❌ El portero canceló la llamada");
-        setIncomingCall(null);
-
-        setTimeout(() => {
-          setCallEndedMessage("");
-        }, 3000);
-
-        return;
-      }
-
-      if (call.status === "finished") {
-        setCallEndedMessage("📴 La llamada finalizó");
-        setIncomingCall(null);
-
-        setTimeout(() => {
-          setCallEndedMessage("");
-        }, 3000);
-
-        return;
-      }
-
-      if (call.status === "rejected") {
-        setCallEndedMessage("❌ Llamada rechazada");
-        setIncomingCall(null);
-
-        setTimeout(() => {
-          setCallEndedMessage("");
-        }, 3000);
-
-        return;
-      }
-
+    if (!call) {
+      setIncomingCall(null);
+      return;
+    }
+console.log(call)
+    if (call.status === "waiting") {
       setIncomingCall(call);
-    });
+      return;
+    }
 
-    return () => unsubscribe();
-  }, []);
+    if (call.status === "finished") {
+
+      if (call.reason === "portero") {
+        setCallEndedMessage("❌ El portero canceló la llamada");
+      }
+
+      if (call.reason === "resident") {
+        setCallEndedMessage("❌ Cancelaste la llamada");
+      }
+
+      if (call.reason === "canceled") {
+        setCallEndedMessage("📞 Llamada perdida");
+      }
+
+      setIncomingCall(null);
+
+      setTimeout(() => setCallEndedMessage(""), 3000);
+    }
+
+  });
+
+  return () => unsubscribe();
+}, []);;
 
   useEffect(() => {
     if (!incomingCall) return;
@@ -110,11 +105,13 @@ export const ResidentPage = () => {
           <div className="incoming-call">
             <h2>📞 Llamada entrante...</h2>
             <p>Portería está llamando</p>
+
             <div className="typing">
               <span></span>
               <span></span>
               <span></span>
             </div>
+
             <div className="call-actions">
               <button className="accept-call-button" onClick={handleAccept}>
                 Atender
@@ -126,7 +123,11 @@ export const ResidentPage = () => {
             </div>
           </div>
         ) : callEndedMessage ? (
-          <p className="call-cancelled">{callEndedMessage}</p>
+          <div className="messages-container waiting-container">
+            <div className="waiting-message error">
+              <h2>{callEndedMessage}</h2>
+            </div>
+          </div>
         ) : (
           <div className="welcome-message">
             <h2>Sin llamadas</h2>
