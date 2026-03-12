@@ -44,7 +44,7 @@ export const ResidentPage = () => {
       setIncomingCall(null);
       return;
     }
-
+console.log(call)
     if (call.status === "waiting") {
       setIncomingCall(call);
       return;
