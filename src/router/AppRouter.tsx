@@ -9,7 +9,7 @@ export const AppRouter = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/portero" element={<PorteroPage />} />
-        <Route path="/resident" element={<ResidentPage />} />
+        <Route path="/resident/:departmentIdNumber" element={<ResidentPage />} />
         <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/waiting/:id" element={<WaitingPage />} />
       </Routes>

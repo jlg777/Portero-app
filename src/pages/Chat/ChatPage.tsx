@@ -16,7 +16,6 @@ export const ChatPage = () => {
   const [sending, setSending] = useState(false);
   const [callEndedReason, setCallEndedReason] = useState<string | null>(null);
   const [endingCall, setEndingCall] = useState(false);
-
   const navigate = useNavigate();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -80,7 +79,9 @@ export const ChatPage = () => {
         finishedRef.current = true;
 
         setTimeout(() => {
-          navigate(role === "portero" ? "/portero" : "/resident");
+          navigate(
+            role === "portero" ? "/portero" : `/resident/${call.departmentId}`,
+          );
         }, 5000);
       }
     });
