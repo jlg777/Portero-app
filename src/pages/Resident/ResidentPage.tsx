@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listenCalls } from "../../services/calls/listenCalls";
 import { updateCallStatus } from "../../services/calls/updateCallStatus";
 import { useNavigate } from "react-router-dom";
 import "../../index.css";
+import { finalizeCall } from "../../services/calls/finalizeCall";
 
 export const ResidentPage = () => {
   const navigate = useNavigate();
@@ -10,9 +11,14 @@ export const ResidentPage = () => {
 
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [callEndedMessage, setCallEndedMessage] = useState("");
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAccept = async () => {
     if (!incomingCall?.id) return;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
     await updateCallStatus(incomingCall.id, "accepted");
 
@@ -27,53 +33,70 @@ export const ResidentPage = () => {
     setIncomingCall(null);
   };
 
- useEffect(() => {
-  const unsubscribe = listenCalls(departmentId, (call) => {
+  useEffect(() => {
+    const unsubscribe = listenCalls(departmentId, (call) => {
+      if (!call) {
+        setIncomingCall(null);
+        return;
+      }
 
-    if (!call) {
-      setIncomingCall(null);
-      return;
-    }
+      if (call.status === "cancelled") {
+        setCallEndedMessage("❌ El portero canceló la llamada");
+        setIncomingCall(null);
 
-    if (call.status === "cancelled") {
-      setCallEndedMessage("❌ El portero canceló la llamada");
-      setIncomingCall(null);
+        setTimeout(() => {
+          setCallEndedMessage("");
+        }, 3000);
 
-      setTimeout(() => {
-        setCallEndedMessage("");
-      }, 3000);
+        return;
+      }
 
-      return;
-    }
+      if (call.status === "finished") {
+        setCallEndedMessage("📴 La llamada finalizó");
+        setIncomingCall(null);
 
-    if (call.status === "finished") {
-      setCallEndedMessage("📴 La llamada finalizó");
-      setIncomingCall(null);
+        setTimeout(() => {
+          setCallEndedMessage("");
+        }, 3000);
 
-      setTimeout(() => {
-        setCallEndedMessage("");
-      }, 3000);
+        return;
+      }
 
-      return;
-    }
+      if (call.status === "rejected") {
+        setCallEndedMessage("❌ Llamada rechazada");
+        setIncomingCall(null);
 
-    if (call.status === "rejected") {
-      setCallEndedMessage("❌ Llamada rechazada");
-      setIncomingCall(null);
+        setTimeout(() => {
+          setCallEndedMessage("");
+        }, 3000);
 
-      setTimeout(() => {
-        setCallEndedMessage("");
-      }, 3000);
+        return;
+      }
 
-      return;
-    }
+      setIncomingCall(call);
+    });
 
-    setIncomingCall(call);
+    return () => unsubscribe();
+  }, []);
 
-  });
+  useEffect(() => {
+    if (!incomingCall) return;
 
-  return () => unsubscribe();
-}, []);
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        await finalizeCall(incomingCall.id, "canceled");
+        setIncomingCall(null);
+      } catch (error) {
+        console.error("Error cancelando llamada", error);
+      }
+    }, 30000);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [incomingCall]);
 
   return (
     <div className="chat-container">

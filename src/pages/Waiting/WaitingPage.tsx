@@ -28,10 +28,16 @@ export const WaitingPage = () => {
         navigate("/portero");
       }, 5000);
     }
+
+    if (call?.status === "finished") {
+      setTimeout(() => {
+        navigate("/portero");
+      }, 4000);
+    }
   }, [call, callId, navigate]);
 
   const handleEndCall = async () => {
-await finalizeCall(callId, "cancelled", "portero_cancelled");
+    await finalizeCall(callId, "canceled");
     navigate("/portero");
   };
 
@@ -61,16 +67,19 @@ await finalizeCall(callId, "cancelled", "portero_cancelled");
 
             <p>Esperando que el residente atienda</p>
 
-            <button className="end-call-button cancel-call-button" onClick={handleEndCall}>
+            <button
+              className="end-call-button cancel-call-button"
+              onClick={handleEndCall}
+            >
               Cancelar llamada
             </button>
           </div>
         )}
 
-        {call?.status === "rejected" && (
+        {call?.status === "finished" && call?.reason === "canceled" && (
           <div className="waiting-message error">
-            <h2>❌ No atendieron</h2>
-            <p>Volviendo al panel...</p>
+            <h2>⏱ El residente no respondió</h2>
+            <p>La llamada se canceló automáticamente</p>
           </div>
         )}
       </div>
