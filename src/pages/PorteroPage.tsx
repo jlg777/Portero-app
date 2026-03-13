@@ -1,21 +1,25 @@
 import { useNavigate } from "react-router-dom";
 import { createCall } from "../services/calls/createCall";
+import { sendPushToResident } from "../services/messaging/sendPushNotification";
 import { useState } from "react";
 import "../index.css";
 
 export const PorteroPage = () => {
-
   const navigate = useNavigate();
   const [loadingDept, setLoadingDept] = useState<number | null>(null);
 
-  const handleCall = async (dept:number) => {
-
+  const handleCall = async (dept: number) => {
     setLoadingDept(dept);
 
     const callId = await createCall(dept);
 
-    navigate(`/waiting/${callId}`);
+    try {
+      await sendPushToResident(callId, dept);
+    } catch (err) {
+      console.warn("Push no enviado (el residente puede no tener notificaciones):", err);
+    }
 
+    navigate(`/waiting/${callId}`);
   };
 
   return (

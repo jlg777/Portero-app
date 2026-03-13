@@ -1,17 +1,22 @@
-import { doc, setDoc } from "firebase/firestore"
-import { db } from "../firebase/firebase"
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
 export const registerDevice = async (
   deviceId: string,
-  departmentId: number
+  departmentId: number,
+  pushSubscription?: PushSubscription | null
 ) => {
+  const ref = doc(db, "departments", deviceId);
 
-  const ref = doc(db, "departments", deviceId)
-
-  await setDoc(ref, {
+  const data: Record<string, unknown> = {
     departmentId,
     active: true,
-    createdAt: new Date()
-  })
+    updatedAt: new Date(),
+  };
 
-}
+  if (pushSubscription) {
+    data.pushSubscription = pushSubscription.toJSON();
+  }
+
+  await setDoc(ref, data, { merge: true });
+};

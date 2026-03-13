@@ -7,15 +7,18 @@ Aplicación web de comunicación entre portería y residentes de un edificio. Pe
 - **Panel Portero**: Selección de departamentos (1-6) para iniciar llamadas
 - **Panel Residente**: Atender o rechazar llamadas entrantes
 - **Chat en tiempo real**: Comunicación bidireccional entre portero y residente
+- **PWA**: Instalable como app en móvil, funciona offline
+- **Notificaciones push**: El residente recibe una notificación cuando el portero llama (aunque la app esté cerrada)
 - **Diseño responsive**: Optimizado para móviles Android y tablets
 - **Firebase**: Backend con Firestore para llamadas y mensajes
 
 ## Tecnologías
 
 - React 19 + TypeScript
-- Vite 7
+- Vite 7 + vite-plugin-pwa
 - React Router 7
 - Firebase (Firestore)
+- Web Push API + Vercel Serverless (notificaciones push, **100% gratis**)
 
 ## Requisitos previos
 
@@ -45,7 +48,26 @@ VITE_FIREBASE_PROJECT_ID=tu_proyecto
 VITE_FIREBASE_STORAGE_BUCKET=tu_proyecto.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
 VITE_FIREBASE_APP_ID=tu_app_id
+
+# Web Push (generar con: npm run generate-vapid)
+VITE_VAPID_PUBLIC_KEY=tu_clave_publica
+VAPID_PUBLIC_KEY=tu_clave_publica
+VAPID_PRIVATE_KEY=tu_clave_privada
 ```
+
+### Configurar notificaciones push (gratis con Vercel)
+
+1. **Generar claves VAPID:**
+   ```bash
+   npm run generate-vapid
+   ```
+   Copia las claves al `.env` local.
+
+2. **Variables en Vercel** (Settings > Environment Variables):
+   - `VAPID_PUBLIC_KEY` – clave pública
+   - `VAPID_PRIVATE_KEY` – clave privada
+   - `FIREBASE_SERVICE_ACCOUNT` – JSON completo de la cuenta de servicio de Firebase  
+     (Firebase Console > Project Settings > Service Accounts > Generate new private key)
 
 ## Desarrollo
 
@@ -99,7 +121,11 @@ src/
     ├── firebase/
     ├── calls/          # createCall, listenCalls, finalizeCall, etc.
     ├── chat/           # sendMessage, listenMessages
-    └── device/         # registerDevice
+    ├── device/         # registerDevice (incluye pushSubscription)
+    └── messaging/      # subscribeToPush, sendPushNotification
+
+api/                    # Vercel Serverless
+└── send-push.ts        # POST /api/send-push – envía push al residente
 ```
 
 ## Despliegue

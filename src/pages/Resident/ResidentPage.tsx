@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import "../../index.css";
 import { finalizeCall } from "../../services/calls/finalizeCall";
 import { registerDevice } from "../../services/device/registerDevice";
+import { subscribeToPush, requestNotificationPermission } from "../../services/messaging/subscribePush";
 
 export const ResidentPage = () => {
   const navigate = useNavigate();
@@ -46,11 +47,24 @@ export const ResidentPage = () => {
 
     if (!deviceId) {
       deviceId = crypto.randomUUID();
-
       localStorage.setItem("deviceId", deviceId);
-
-      registerDevice(deviceId, departmentId);
     }
+
+    const setupDeviceAndNotifications = async () => {
+      try {
+        const permission = await requestNotificationPermission();
+        let pushSubscription: PushSubscription | null = null;
+        if (permission === "granted") {
+          pushSubscription = await subscribeToPush();
+        }
+        await registerDevice(deviceId!, departmentId, pushSubscription);
+      } catch (error) {
+        console.error("Error registrando dispositivo:", error);
+        await registerDevice(deviceId!, departmentId);
+      }
+    };
+
+    setupDeviceAndNotifications();
   }, [departmentId]);
 
   useEffect(() => {
