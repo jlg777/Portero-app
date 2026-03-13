@@ -7,13 +7,20 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-vapid": "node scripts/generate-vapid.js"
   },
   "dependencies": {
+    "@vercel/node": "^5.6.15",
     "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "vite-plugin-pwa": "^1.2.0",
+    "web-push": "^3.6.7",
+    "workbox-precaching": "^7.4.0",
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
