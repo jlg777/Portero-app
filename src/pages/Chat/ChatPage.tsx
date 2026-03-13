@@ -54,6 +54,10 @@ export const ChatPage = () => {
   }, [callId]);
 
   useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
     const unsubscribe = listenCall(callId, (call) => {
       if (!call) return;
 

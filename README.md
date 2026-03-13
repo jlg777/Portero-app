@@ -1,73 +1,111 @@
-# React + TypeScript + Vite
+# Portero App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web de comunicación entre portería y residentes de un edificio. Permite al portero iniciar llamadas a departamentos y mantener un chat en tiempo real con los residentes.
 
-Currently, two official plugins are available:
+## Características
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Panel Portero**: Selección de departamentos (1-6) para iniciar llamadas
+- **Panel Residente**: Atender o rechazar llamadas entrantes
+- **Chat en tiempo real**: Comunicación bidireccional entre portero y residente
+- **Diseño responsive**: Optimizado para móviles Android y tablets
+- **Firebase**: Backend con Firestore para llamadas y mensajes
 
-## React Compiler
+## Tecnologías
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 + TypeScript
+- Vite 7
+- React Router 7
+- Firebase (Firestore)
 
-## Expanding the ESLint configuration
+## Requisitos previos
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 18+
+- npm o pnpm
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Instalación
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+# Clonar el repositorio
+git clone <url-del-repo>
+cd Portero-app
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Instalar dependencias
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Configuración
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Crea un archivo `.env` en la raíz del proyecto con las variables de Firebase:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_FIREBASE_API_KEY=tu_api_key
+VITE_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
+VITE_FIREBASE_DATABASE_URL=https://tu_proyecto-default-rtdb.firebaseio.com
+VITE_FIREBASE_PROJECT_ID=tu_proyecto
+VITE_FIREBASE_STORAGE_BUCKET=tu_proyecto.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
+VITE_FIREBASE_APP_ID=tu_app_id
 ```
+
+## Desarrollo
+
+```bash
+npm run dev
+```
+
+Abre [http://localhost:5173](http://localhost:5173) en el navegador.
+
+## Build
+
+```bash
+npm run build
+```
+
+Los archivos se generan en la carpeta `dist/`.
+
+## Preview de producción
+
+```bash
+npm run preview
+```
+
+## Rutas
+
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Redirige a `/portero` |
+| `/portero` | Panel del portero (selección de departamento) |
+| `/resident/:departmentIdNumber` | Panel del residente |
+| `/chat/:id` | Chat (con `?role=portero` o `?role=resident`) |
+| `/waiting/:id` | Espera de respuesta del residente |
+
+## Estructura del proyecto
+
+```
+src/
+├── main.tsx
+├── App.tsx
+├── index.css           # Estilos globales (mobile-first)
+├── router/
+│   └── AppRouter.tsx
+├── pages/
+│   ├── PorteroPage.tsx
+│   ├── Resident/ResidentPage.tsx
+│   ├── Chat/ChatPage.tsx
+│   └── Waiting/WaitingPage.tsx
+├── componets/
+│   └── MessageBubble.tsx
+└── services/
+    ├── firebase/
+    ├── calls/          # createCall, listenCalls, finalizeCall, etc.
+    ├── chat/           # sendMessage, listenMessages
+    └── device/         # registerDevice
+```
+
+## Despliegue
+
+El proyecto está configurado para Vercel (`vercel.json`). Los deploys desde la rama principal se despliegan automáticamente.
+
+## Licencia
+
+Proyecto privado.
