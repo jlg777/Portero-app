@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { PorteroPage } from "../pages/PorteroPage"
 import { ResidentPage } from "../pages/Resident/ResidentPage"
 import { ChatPage } from "../pages/Chat/ChatPage"
@@ -8,6 +8,7 @@ export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/portero" replace />} />
         <Route path="/portero" element={<PorteroPage />} />
         <Route path="/resident/:departmentIdNumber" element={<ResidentPage />} />
         <Route path="/chat/:id" element={<ChatPage />} />
