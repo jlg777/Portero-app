@@ -10,17 +10,24 @@ export async function sendPushToResident(
     import.meta.env.VITE_API_URL ||
     (typeof window !== "undefined" ? window.location.origin : "");
 
-  const res = await fetch(`${baseUrl}/api/send-push`, {
+  const url = `${baseUrl}/api/send-push`;
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ callId, departmentId }),
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "Error enviando notificación");
+  let data: { error?: string; success?: boolean; sent?: number; message?: string };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`API no respondió correctamente (${res.status})`);
   }
 
-  return data;
+  if (!res.ok) {
+    const msg = data.error || data.message || `Error ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return { success: !!data.success, sent: data.sent };
 }

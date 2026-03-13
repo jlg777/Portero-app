@@ -64,10 +64,19 @@ VAPID_PRIVATE_KEY=tu_clave_privada
    Copia las claves al `.env` local.
 
 2. **Variables en Vercel** (Settings > Environment Variables):
-   - `VAPID_PUBLIC_KEY` – clave pública
+   - `VAPID_PUBLIC_KEY` – clave pública (misma que VITE_VAPID_PUBLIC_KEY)
    - `VAPID_PRIVATE_KEY` – clave privada
-   - `FIREBASE_SERVICE_ACCOUNT` – JSON completo de la cuenta de servicio de Firebase  
-     (Firebase Console > Project Settings > Service Accounts > Generate new private key)
+   - `FIREBASE_SERVICE_ACCOUNT` – JSON completo de la cuenta de servicio (una sola línea, sin saltos)
+
+3. **Desarrollo local**: Añade `VITE_API_URL=https://tu-app.vercel.app` al `.env` para que el proxy reenvíe /api a producción.
+
+### Push no funciona – revisar
+
+- **Residente**: Abre `/resident/X`, acepta notificaciones cuando el navegador lo pida.
+- **HTTPS**: Push solo funciona con HTTPS (o localhost).
+- **Vercel**: Variables correctas en Production, Preview y Development.
+- **Consola**: Si hay errores al llamar (portero), revisa la consola del navegador.
+- **Firestore**: Revisa que en `departments` existan documentos con `pushSubscription`.
 
 ## Desarrollo
 
