@@ -158,6 +158,9 @@ export const ResidentPage = () => {
           <div className="welcome-message">
             <h2>Sin llamadas</h2>
             <p>Cuando portería te llame aparecerá aquí</p>
+            <p className="resident-link-hint">
+              <a href="/resident">Cambiar departamento</a>
+            </p>
           </div>
         )}
       </div>
