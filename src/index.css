@@ -648,8 +648,21 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.department-button svg {
+.department-button svg,
+.department-button span {
   flex-shrink: 0;
+}
+
+.resident-link-hint {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.link-portero {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 /* ============================================
