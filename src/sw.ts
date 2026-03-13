@@ -22,44 +22,53 @@ self.addEventListener("push", (event: PushEvent) => {
   const title = data?.title ?? "Portero";
   const body = data?.body ?? "Llamada entrante de portería";
 
-  const options: NotificationOptions & {
-    data?: Record<string, string>;
-    actions?: { action: string; title: string }[];
-  } = {
-    body,
-    icon: "/icons/icon.svg",
-    badge: "/icons/icon.svg",
-    tag: "portero-call",
-    requireInteraction: true,
-    data: data?.data ?? {},
-    actions: [
-      { action: "accept", title: "Atender" },
-      { action: "reject", title: "Rechazar" },
-    ],
-  };
+const options = {
+  body,
+  icon: "/icons/icon.svg",
+  badge: "/icons/icon.svg",
+  tag: "portero-call",
+  renotify: true,
+  requireInteraction: true,
+  vibrate: [300, 100, 300, 100, 800],
+  data: data?.data ?? {},
+  actions: [
+    { action: "accept", title: "Atender" },
+    { action: "reject", title: "Rechazar" },
+  ],
+};
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Click en la notificación -> abrir app
 self.addEventListener("notificationclick", (event: NotificationEvent) => {
+  const action = event.action;
+  const data = (event.notification.data ?? {}) as Record<string, string>;
+
   event.notification.close();
 
-  const data = (event.notification.data ?? {}) as Record<string, string>;
   const departmentId = data.departmentId ?? "";
-  const urlToOpen = data.url ?? (departmentId ? `/resident/${departmentId}` : "/");
+  const urlToOpen =
+    data.url ?? (departmentId ? `/resident/${departmentId}` : "/");
+
+  if (action === "reject") {
+    return;
+  }
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && "focus" in client) {
-          client.navigate(urlToOpen);
-          return client.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            client.navigate(urlToOpen);
+            return client.focus();
+          }
         }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    })
+
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      })
   );
 });

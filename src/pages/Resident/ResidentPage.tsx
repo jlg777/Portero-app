@@ -5,7 +5,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import "../../index.css";
 import { finalizeCall } from "../../services/calls/finalizeCall";
 import { registerDevice } from "../../services/device/registerDevice";
-import { subscribeToPush, requestNotificationPermission } from "../../services/messaging/subscribePush";
+import {
+  subscribeToPush,
+  requestNotificationPermission,
+} from "../../services/messaging/subscribePush";
 
 export const ResidentPage = () => {
   const navigate = useNavigate();
@@ -53,16 +56,29 @@ export const ResidentPage = () => {
 
     const setupDeviceAndNotifications = async () => {
       try {
+        // Registrar Service Worker
+        if ("serviceWorker" in navigator) {
+          await navigator.serviceWorker.register("/sw.js");
+        }
+
+        // Pedir permiso de notificaciones
         const permission = await requestNotificationPermission();
+
         let pushSubscription: PushSubscription | null = null;
+
         if (permission === "granted") {
           pushSubscription = await subscribeToPush();
         }
+
         setPushEnabled(!!pushSubscription);
+
+        // Registrar dispositivo en backend
         await registerDevice(deviceId!, departmentId, pushSubscription);
       } catch (error) {
         console.error("Error registrando dispositivo:", error);
+
         setPushEnabled(false);
+
         await registerDevice(deviceId!, departmentId);
       }
     };
@@ -76,6 +92,7 @@ export const ResidentPage = () => {
         setIncomingCall(null);
         return;
       }
+
       if (call.status === "waiting") {
         setIncomingCall(call);
         return;
@@ -101,7 +118,7 @@ export const ResidentPage = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [departmentId]);
 
   useEffect(() => {
     if (!incomingCall) return;
@@ -161,12 +178,17 @@ export const ResidentPage = () => {
           <div className="welcome-message">
             <h2>Sin llamadas</h2>
             <p>Cuando portería te llame aparecerá aquí</p>
+
             {pushEnabled === true && (
               <p className="push-status enabled">🔔 Notificaciones activas</p>
             )}
+
             {pushEnabled === false && (
-              <p className="push-status disabled">🔕 Sin notificaciones (acepta permisos al cargar)</p>
+              <p className="push-status disabled">
+                🔕 Sin notificaciones (acepta permisos al cargar)
+              </p>
             )}
+
             <p className="resident-link-hint">
               <a href="/resident">Cambiar departamento</a>
             </p>
@@ -176,3 +198,4 @@ export const ResidentPage = () => {
     </div>
   );
 };
+
