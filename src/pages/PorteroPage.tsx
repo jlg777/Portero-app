@@ -14,9 +14,13 @@ export const PorteroPage = () => {
     const callId = await createCall(dept);
 
     try {
-      await sendPushToResident(callId, dept);
+      const result = await sendPushToResident(callId, dept);
+      if (result.sent === 0) {
+        console.info("Push: ningún dispositivo suscrito para depto", dept);
+      }
     } catch (err) {
-      console.warn("Push no enviado (el residente puede no tener notificaciones):", err);
+      console.error("Push no enviado:", err);
+      // No bloquea la llamada - el residente puede ver en la app
     }
 
     navigate(`/waiting/${callId}`);

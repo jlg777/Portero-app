@@ -8,7 +8,14 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 export async function subscribeToPush(): Promise<PushSubscription | null> {
-  if (!VAPID_PUBLIC_KEY || !("serviceWorker" in navigator)) return null;
+  if (!VAPID_PUBLIC_KEY) {
+    console.warn("VITE_VAPID_PUBLIC_KEY no configurada - push no disponible");
+    return null;
+  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    console.warn("Push no soportado en este navegador");
+    return null;
+  }
 
   try {
     const registration = await navigator.serviceWorker.ready;
@@ -19,9 +26,10 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
       return subscription;
     }
 
+    const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource;
     const newSubscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+      applicationServerKey: key,
     });
 
     return newSubscription;

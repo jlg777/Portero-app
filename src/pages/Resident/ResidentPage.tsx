@@ -14,6 +14,7 @@ export const ResidentPage = () => {
 
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [callEndedMessage, setCallEndedMessage] = useState("");
+  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,9 +58,11 @@ export const ResidentPage = () => {
         if (permission === "granted") {
           pushSubscription = await subscribeToPush();
         }
+        setPushEnabled(!!pushSubscription);
         await registerDevice(deviceId!, departmentId, pushSubscription);
       } catch (error) {
         console.error("Error registrando dispositivo:", error);
+        setPushEnabled(false);
         await registerDevice(deviceId!, departmentId);
       }
     };
@@ -158,6 +161,12 @@ export const ResidentPage = () => {
           <div className="welcome-message">
             <h2>Sin llamadas</h2>
             <p>Cuando portería te llame aparecerá aquí</p>
+            {pushEnabled === true && (
+              <p className="push-status enabled">🔔 Notificaciones activas</p>
+            )}
+            {pushEnabled === false && (
+              <p className="push-status disabled">🔕 Sin notificaciones (acepta permisos al cargar)</p>
+            )}
             <p className="resident-link-hint">
               <a href="/resident">Cambiar departamento</a>
             </p>
